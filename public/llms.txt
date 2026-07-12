@@ -7,21 +7,21 @@
 ## Pages
 
 ### בית
-https://example.com
+https://imri.zappy5.app
 המדריך הדיגיטלי שיחסוך לכם טעויות יקרות בתכנון המטבח. מניסיון של אלפי פרויקטים, אנו מעניקים לכם את הכלים לתכנן נכון מההתחלה. הורידו עכשיו ב-97 ₪ בלבד!
 
 ## Legal & Policy
 
 ### Privacy Policy
-https://example.com/privacy
+https://imri.zappy5.app/privacy
 Information about how user data is collected, stored, and protected.
 
 ### Terms & Conditions
-https://example.com/terms
+https://imri.zappy5.app/terms
 Legal terms describing service usage, rights, and policies.
 
 ### Accessibility Statement
-https://example.com/accessibility
+https://imri.zappy5.app/accessibility
 Information about WCAG compliance and accessibility features.
 
 ---
@@ -50,6 +50,6 @@ Interior Design & Architecture
 
 # Machine-readable feeds
 
-- Sitemap (XML): https://example.com/sitemap.xml
-- Robots: https://example.com/robots.txt
-- Flattened page text (for LLMs): https://example.com/llms-full.txt
+- Sitemap (XML): https://imri.zappy5.app/sitemap.xml
+- Robots: https://imri.zappy5.app/robots.txt
+- Flattened page text (for LLMs): https://imri.zappy5.app/llms-full.txt

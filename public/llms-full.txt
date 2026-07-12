@@ -2,13 +2,13 @@
 
 IMRI is an interior design and architecture firm that created a professional digital guide (PDF) for kitchen planning, priced at 97 ₪ (discounted from 297 ₪). The brand positions itself as an experienced, knowledgeable partner that helps homeowners avoid costly planning mistakes before they begin. The guide is practical and accessible, aimed at people who are about to invest heavily in a kitchen renovation or new build. The tone is warm, professional, and empowering — focused on saving clients time, money, and stress through expert knowledge accumulated from real-world design experience.
 
-Source: https://imri-bab3c1e1.zappy5.app
+Source: https://example.com
 
 ---
 
 ## תכנון מטבח מנצח — IMRI
 
-URL: https://imri-bab3c1e1.zappy5.app
+URL: https://example.com
 Description: המדריך הדיגיטלי שיחסוך לכם טעויות יקרות בתכנון המטבח. מניסיון של אלפי פרויקטים, אנו מעניקים לכם את הכלים לתכנן נכון מההתחלה. הורידו עכשיו ב-97 ₪ בלבד!
 
 תכנון מטבח מנצח — IMRI
@@ -741,7 +741,7 @@ IMRI
 
 ## מדיניות פרטיות
 
-URL: https://imri-bab3c1e1.zappy5.app/privacy
+URL: https://example.com/privacy
 Description: מדיניות הפרטיות שלנו - כיצד אנו אוספים, משתמשים ומגנים על המידע שלכם
 
 מדיניות פרטיות
@@ -1013,7 +1013,7 @@ IMRI ("החברה", "אנו", "שלנו") מחויבת להגן על פרטיו�
 
 ## הצהרת נגישות
 
-URL: https://imri-bab3c1e1.zappy5.app/accessibility
+URL: https://example.com/accessibility
 Description: הצהרת הנגישות שלנו - מחויבותנו לנגישות דיגיטלית
 
 הצהרת נגישות
@@ -1294,7 +1294,7 @@ IMRI מחויבת להנגיש את השירותים לכלל הציבור. אנ
 
 ## תנאי שימוש
 
-URL: https://imri-bab3c1e1.zappy5.app/terms
+URL: https://example.com/terms
 Description: תנאי השימוש באתר - הזכויות והחובות של המשתמשים
 
 תנאי שימוש

@@ -1,0 +1,55 @@
+# IMRI — Generative Engine Optimization Map
+
+> IMRI is an interior design and architecture firm that created a professional digital guide (PDF) for kitchen planning, priced at 97 ₪ (discounted from 297 ₪). The brand positions itself as an experienced, knowledgeable partner that helps homeowners avoid costly planning mistakes before they begin. The guide is practical and accessible, aimed at people who are about to invest heavily in a kitchen renovation or new build. The tone is warm, professional, and empowering — focused on saving clients time, money, and stress through expert knowledge accumulated from real-world design experience.
+
+---
+
+## Pages
+
+### בית
+https://imri-bab3c1e1.zappy5.app
+המדריך הדיגיטלי שיחסוך לכם טעויות יקרות בתכנון המטבח. מניסיון של אלפי פרויקטים, אנו מעניקים לכם את הכלים לתכנן נכון מההתחלה. הורידו עכשיו ב-97 ₪ בלבד!
+
+## Legal & Policy
+
+### Privacy Policy
+https://imri-bab3c1e1.zappy5.app/privacy
+Information about how user data is collected, stored, and protected.
+
+### Terms & Conditions
+https://imri-bab3c1e1.zappy5.app/terms
+Legal terms describing service usage, rights, and policies.
+
+### Accessibility Statement
+https://imri-bab3c1e1.zappy5.app/accessibility
+Information about WCAG compliance and accessibility features.
+
+---
+
+## How to Contact Us
+
+- (No contact details configured yet.)
+
+---
+
+# Business Context (for LLM understanding)
+
+## About IMRI
+IMRI is an interior design and architecture firm that created a professional digital guide (PDF) for kitchen planning, priced at 97 ₪ (discounted from 297 ₪). The brand positions itself as an experienced, knowledgeable partner that helps homeowners avoid costly planning mistakes before they begin. The guide is practical and accessible, aimed at people who are about to invest heavily in a kitchen renovation or new build. The tone is warm, professional, and empowering — focused on saving clients time, money, and stress through expert knowledge accumulated from real-world design experience.
+
+## Target Audience
+- אנשים שבונים בית, משפצים מטבח, קונים דירה חדשה, או עומדים לפגוש נגר/מעצבת/חברת מטבחים
+- בוני בתים חדשים
+- משפצים מטבח
+- קונים דירה חדשה
+
+## Industry
+Interior Design & Architecture
+
+---
+
+# Machine-readable feeds
+
+- Sitemap (XML): https://imri-bab3c1e1.zappy5.app/sitemap.xml
+- Robots: https://imri-bab3c1e1.zappy5.app/robots.txt
+- Flattened page text (for LLMs): https://imri-bab3c1e1.zappy5.app/llms-full.txt

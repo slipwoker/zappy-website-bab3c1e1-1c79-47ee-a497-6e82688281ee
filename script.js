@@ -7274,10 +7274,10 @@ function fixContrast(){
   }
 })();
 
-/* ZAPPY_CART_BUNDLE_DISCOUNT_V3 */
+/* ZAPPY_CART_BUNDLE_DISCOUNT_V4 */
 ;(function() {
-  if (window.__zappyCartAutomaticDiscountRuntimeV3) return;
-  window.__zappyCartAutomaticDiscountRuntimeV3 = true;
+  if (window.__zappyCartAutomaticDiscountRuntimeV4) return;
+  window.__zappyCartAutomaticDiscountRuntimeV4 = true;
 
   function getWebsiteId() {
     return window.ZAPPY_WEBSITE_ID || document.body.getAttribute('data-website-id') || document.documentElement.getAttribute('data-website-id') || '';
@@ -7706,25 +7706,25 @@ function fixContrast(){
 
   function wrapRenderCartDrawer() {
     var orig = window.zappyRenderCartDrawer;
-    if (typeof orig === 'function' && !orig.__zappyAutomaticDiscountWrappedV3) {
+    if (typeof orig === 'function' && !orig.__zappyAutomaticDiscountWrappedV4) {
       window.zappyRenderCartDrawer = function() {
         var result = orig.apply(this, arguments);
         refreshSummary();
         return result;
       };
-      window.zappyRenderCartDrawer.__zappyAutomaticDiscountWrappedV3 = true;
+      window.zappyRenderCartDrawer.__zappyAutomaticDiscountWrappedV4 = true;
     }
   }
 
   function wrapFn(name) {
     var orig = window[name];
-    if (typeof orig !== 'function' || orig.__zappyAutomaticDiscountWrappedV3) return;
+    if (typeof orig !== 'function' || orig.__zappyAutomaticDiscountWrappedV4) return;
     window[name] = function() {
       var result = orig.apply(this, arguments);
       refreshSummary();
       return result;
     };
-    window[name].__zappyAutomaticDiscountWrappedV3 = true;
+    window[name].__zappyAutomaticDiscountWrappedV4 = true;
   }
 
   function wrapCartMutators() {
@@ -7735,12 +7735,23 @@ function fixContrast(){
 
   function watchCartDrawer() {
     var drawer = document.getElementById('cart-drawer');
-    if (!drawer || drawer.__zappyAutomaticDiscountObservedV3) return;
+    if (!drawer || drawer.__zappyAutomaticDiscountObservedV4) return;
+    drawer.__zappyAutomaticDiscountObservedV4 = true;
+    // Also stamp V3 so a leftover V3 IIFE cannot attach the looping observer.
     drawer.__zappyAutomaticDiscountObservedV3 = true;
+    var scheduled = false;
     var obs = new MutationObserver(function() {
-      if (drawer.classList.contains('active')) refreshSummary();
+      if (!drawer.classList.contains('active')) return;
+      if (scheduled) return;
+      scheduled = true;
+      setTimeout(function() {
+        scheduled = false;
+        refreshSummary();
+      }, 0);
     });
-    obs.observe(drawer, { attributes: true, attributeFilter: ['class'], subtree: true, childList: true, characterData: true });
+    // ONLY the drawer root class (open/close). Do NOT observe childList /
+    // characterData / subtree — refreshSummary writes those and would loop.
+    obs.observe(drawer, { attributes: true, attributeFilter: ['class'] });
   }
 
   function boot() {

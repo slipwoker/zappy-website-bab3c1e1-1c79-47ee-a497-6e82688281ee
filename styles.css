@@ -5991,6 +5991,120 @@ div[id*="mic-access-tool-box"] button[class*="reset"] * {
     font-size: 0.95rem;
   }
 }
+
+.site-footer .footer-social-col {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.site-footer .footer-social-col h4 {
+  font-family: 'Noto Serif Hebrew', 'Frank Ruhl Libre', serif !important;
+  font-size: 1.1rem !important;
+  font-weight: 500 !important;
+  color: var(--text-light, #FFF9F0) !important;
+  margin: 0 !important;
+  letter-spacing: 0.5px !important;
+  position: relative !important;
+  padding-bottom: 12px !important;
+}
+
+.site-footer .footer-social-col h4::after {
+  content: '' !important;
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: 40px !important;
+  height: 2px !important;
+  background: var(--accent, var(--accent-color, var(--accent, #B45F3A))) !important;
+  border-radius: 1px !important;
+}
+
+.site-footer .footer-social {
+  display: flex !important;
+  gap: 14px !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+.site-footer .footer-social a {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 50% !important;
+  border: 1.5px solid rgba(255, 249, 240, 0.2) !important;
+  color: var(--text-light, #FFF9F0) !important;
+  text-decoration: none !important;
+  transition: all 0.35s ease !important;
+  background: transparent !important;
+}
+
+.site-footer .footer-social a:hover {
+  border-color: var(--accent, var(--accent-color, var(--accent, #B45F3A))) !important;
+  background: rgba(180, 95, 58, 0.15) !important;
+  color: var(--accent, var(--accent-color, var(--accent, #B45F3A))) !important;
+  transform: translateY(-3px) !important;
+  box-shadow: 0 8px 20px rgba(180, 95, 58, 0.25) !important;
+}
+
+.site-footer .footer-social a i {
+  font-size: 16px !important;
+}
+
+@media (max-width: 768px) {
+.site-footer .footer-social-col {
+  align-items: center !important;
+}
+
+.site-footer .footer-social a {
+  width: 44px !important;
+  height: 44px !important;
+}
+
+.site-footer .footer-social a i {
+  font-size: 17px !important;
+}
+}
+
+.site-footer .contact-list a {
+  color: var(--text-light, #FFF9F0) !important;
+}
+
+.site-footer .contact-list li {
+  color: var(--text-light, #FFF9F0) !important;
+}
+
+.site-footer .contact-list span {
+  color: var(--text-light, #FFF9F0) !important;
+}
+
+.site-footer .footer-legal a {
+  color: var(--text-light, #FFF9F0) !important;
+}
+
+.site-footer .copyright p {
+  color: var(--text-light, #FFF9F0) !important;
+}
+
+.site-footer .footer-bottom a {
+  color: var(--text-light, #FFF9F0) !important;
+}
+
+.site-footer .footer-bottom p {
+  color: var(--text-light, #FFF9F0) !important;
+}
+
+.site-footer .footer-bottom span:not(.separator) {
+  color: var(--text-light, #FFF9F0) !important;
+}
+
+.site-footer .footer-legal .separator {
+  color: var(--text-light, #FFF9F0) !important;
+}
 /* mobile-submenu-overflow-fix */
 @media (max-width: 768px) {
   .navbar .sub-menu.mobile-expanded,

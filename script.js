@@ -7728,10 +7728,27 @@ function fixContrast(){
   }
 
   function wrapCartMutators() {
+    // addToCart/saveCart call the closure's renderCartDrawer directly (not
+    // window.zappyRenderCartDrawer), so wrap zappyAddToCart too — otherwise
+    // adding a line while the drawer is already open leaves discount rows stale.
+    wrapFn('zappyAddToCart');
     wrapFn('zappyUpdateQty');
     wrapFn('zappyRemoveFromCart');
     wrapRenderCartDrawer();
   }
+
+  // Ignore MutationObserver callbacks caused by our own summary DOM writes so
+  // we can watch cart line item updates (childList) without the V3 feedback loop.
+  var summaryWriteDepth = 0;
+  var _updateCartDrawerSummary = updateCartDrawerSummary;
+  updateCartDrawerSummary = function() {
+    summaryWriteDepth++;
+    try {
+      return _updateCartDrawerSummary.apply(this, arguments);
+    } finally {
+      summaryWriteDepth--;
+    }
+  };
 
   function watchCartDrawer() {
     var drawer = document.getElementById('cart-drawer');
@@ -7742,16 +7759,20 @@ function fixContrast(){
     var scheduled = false;
     var obs = new MutationObserver(function() {
       if (!drawer.classList.contains('active')) return;
+      if (summaryWriteDepth > 0) return;
       if (scheduled) return;
       scheduled = true;
       setTimeout(function() {
         scheduled = false;
+        if (summaryWriteDepth > 0) return;
         refreshSummary();
       }, 0);
     });
-    // ONLY the drawer root class (open/close). Do NOT observe childList /
-    // characterData / subtree — refreshSummary writes those and would loop.
-    obs.observe(drawer, { attributes: true, attributeFilter: ['class'] });
+    // class = open/close; childList/subtree = line-item re-renders from the
+    // closure's renderCartDrawer (addToCart while drawer already open).
+    // Do NOT observe characterData without the summaryWriteDepth guard — and
+    // never call refreshSummary synchronously from the observer (V3 freeze).
+    obs.observe(drawer, { attributes: true, attributeFilter: ['class'], childList: true, subtree: true });
   }
 
   function boot() {

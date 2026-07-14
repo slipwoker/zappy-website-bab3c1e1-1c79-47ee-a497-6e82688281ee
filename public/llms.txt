@@ -1,4 +1,4 @@
-# IMRI — Generative Engine Optimization Map
+# IMRI ARCHITECTURE — Generative Engine Optimization Map
 
 > IMRI is an interior design and architecture firm that created a professional digital guide (PDF) for kitchen planning, priced at 97 ₪ (discounted from 297 ₪). The brand positions itself as an experienced, knowledgeable partner that helps homeowners avoid costly planning mistakes before they begin. The guide is practical and accessible, aimed at people who are about to invest heavily in a kitchen renovation or new build. The tone is warm, professional, and empowering — focused on saving clients time, money, and stress through expert knowledge accumulated from real-world design experience.
 
@@ -32,13 +32,16 @@ Information about WCAG compliance and accessibility features.
 
 ## How to Contact Us
 
-- (No contact details configured yet.)
+- Email: Imriarch@gmail.com
+- Phone: 0544362632
+- Phone (tel): tel:0544362632
+- Address: ישראל
 
 ---
 
 # Business Context (for LLM understanding)
 
-## About IMRI
+## About IMRI ARCHITECTURE
 IMRI is an interior design and architecture firm that created a professional digital guide (PDF) for kitchen planning, priced at 97 ₪ (discounted from 297 ₪). The brand positions itself as an experienced, knowledgeable partner that helps homeowners avoid costly planning mistakes before they begin. The guide is practical and accessible, aimed at people who are about to invest heavily in a kitchen renovation or new build. The tone is warm, professional, and empowering — focused on saving clients time, money, and stress through expert knowledge accumulated from real-world design experience.
 
 ## Target Audience

@@ -221,6 +221,377 @@
 })();
 </script>
 <!-- End Zappy Analytics -->
+<!-- Zappy Marketing Events -->
+<script>
+(function() {
+  'use strict';
+  if (window.zappyFireMarketingEvent) return;
+
+  var ECOM_MODE = "";
+  var IS_CATALOG = false;
+  var IS_FULL = false;
+
+  var ECOM_ALIAS = {
+    begin_checkout: 'checkout_started',
+    purchase: 'checkout_complete',
+    add_to_cart: 'add_to_cart',
+    view_product: 'view_product'
+  };
+
+  function pagePath() {
+    try {
+      if (window.ZAPPY_CONFIG && window.ZAPPY_CONFIG.currentPagePath) {
+        return window.ZAPPY_CONFIG.currentPagePath;
+      }
+    } catch (e) {}
+    try { return window.location.pathname || '/'; } catch (e2) { return '/'; }
+  }
+
+  function normalizeItems(meta) {
+    meta = meta || {};
+    var raw = meta.items || meta.cartItems || meta.cart_items || meta.lineItems || [];
+    if (!Array.isArray(raw)) raw = [];
+    var out = [];
+    for (var i = 0; i < raw.length; i++) {
+      var item = raw[i];
+      if (!item || typeof item !== 'object') continue;
+      var id = String(item.item_id || item.productId || item.product_id || item.id || '').trim();
+      var name = String(item.item_name || item.productName || item.product_name || item.name || '').trim();
+      var price = parseFloat(item.price != null ? item.price : (item.unitPrice != null ? item.unitPrice : 0)) || 0;
+      var quantity = Math.max(1, parseInt(item.quantity != null ? item.quantity : (item.qty != null ? item.qty : 1), 10) || 1);
+      if (!id && !name) continue;
+      out.push({ item_id: id || name, item_name: name || id, price: price, quantity: quantity });
+    }
+    return out;
+  }
+
+  function buildGa4Params(eventId, meta) {
+    meta = meta || {};
+    var items = normalizeItems(meta);
+    var value = parseFloat(meta.value != null ? meta.value : (meta.total != null ? meta.total : 0)) || 0;
+    var currency = String(meta.currency || 'USD').toUpperCase();
+
+    if (eventId === 'checkout_complete') {
+      return {
+        transaction_id: String(meta.transaction_id || meta.orderId || meta.order_id || meta.orderNumber || '') || undefined,
+        value: value,
+        currency: currency,
+        items: items
+      };
+    }
+    if (eventId === 'checkout_started') {
+      return { value: value, currency: currency, items: items };
+    }
+    if (eventId === 'add_to_cart') {
+      var atcItems = items.length ? items : [{
+        item_id: String(meta.productId || meta.product_id || ''),
+        item_name: String(meta.productName || meta.product_name || ''),
+        price: parseFloat(meta.value != null ? meta.value : (meta.price != null ? meta.price : 0)) || 0,
+        quantity: parseInt(meta.quantity != null ? meta.quantity : 1, 10) || 1
+      }].filter(function(x) { return x.item_id || x.item_name; });
+      return {
+        value: value || (atcItems[0] ? atcItems[0].price * atcItems[0].quantity : 0),
+        currency: currency,
+        items: atcItems
+      };
+    }
+    if (eventId === 'view_product') {
+      var vpItems = items.length ? items : [{
+        item_id: String(meta.productId || meta.product_id || ''),
+        item_name: String(meta.productName || meta.product_name || ''),
+        price: parseFloat(meta.price != null ? meta.price : (meta.value != null ? meta.value : 0)) || 0,
+        quantity: 1
+      }].filter(function(x) { return x.item_id || x.item_name; });
+      return {
+        currency: currency,
+        value: value || (vpItems[0] ? vpItems[0].price : 0),
+        items: vpItems
+      };
+    }
+    if (eventId === 'whatsapp_click' || eventId === 'phone_click') {
+      return { method: eventId === 'whatsapp_click' ? 'whatsapp' : 'phone', page_path: meta.pagePath || pagePath() };
+    }
+    if (eventId === 'contact_form_submitted' || eventId === 'product_inquiry') {
+      return { page_path: meta.pagePath || pagePath() };
+    }
+    return meta;
+  }
+
+  function buildMetaParams(eventId, meta) {
+    meta = meta || {};
+    var items = normalizeItems(meta);
+    var value = parseFloat(meta.value != null ? meta.value : (meta.total != null ? meta.total : 0)) || 0;
+    var currency = String(meta.currency || 'USD').toUpperCase();
+    var contentIds = [];
+    var numItems = 0;
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].item_id) contentIds.push(items[i].item_id);
+      numItems += items[i].quantity || 1;
+    }
+
+    if (eventId === 'checkout_complete') {
+      return {
+        value: value,
+        currency: currency,
+        content_ids: contentIds.length ? contentIds : undefined,
+        content_type: 'product',
+        num_items: numItems || undefined,
+        order_id: String(meta.order_id || meta.orderId || meta.transaction_id || meta.orderNumber || '') || undefined
+      };
+    }
+    if (eventId === 'checkout_started') {
+      return {
+        value: value,
+        currency: currency,
+        content_ids: contentIds.length ? contentIds : undefined,
+        content_type: 'product',
+        num_items: numItems || parseInt(meta.itemCount != null ? meta.itemCount : 0, 10) || undefined
+      };
+    }
+    if (eventId === 'add_to_cart') {
+      var id = String(meta.productId || meta.product_id || contentIds[0] || '');
+      return {
+        value: value || (items[0] ? items[0].price * items[0].quantity : 0),
+        currency: currency,
+        content_ids: id ? [id] : (contentIds.length ? contentIds : undefined),
+        content_type: 'product',
+        content_name: meta.productName || meta.product_name || (items[0] && items[0].item_name),
+        num_items: parseInt(meta.quantity != null ? meta.quantity : (numItems || 1), 10) || 1
+      };
+    }
+    if (eventId === 'view_product') {
+      var vid = String(meta.productId || meta.product_id || contentIds[0] || '');
+      return {
+        value: value || parseFloat(meta.price != null ? meta.price : 0) || 0,
+        currency: currency,
+        content_ids: vid ? [vid] : (contentIds.length ? contentIds : undefined),
+        content_type: 'product',
+        content_name: meta.productName || meta.product_name || (items[0] && items[0].item_name)
+      };
+    }
+    if (eventId === 'whatsapp_click' || eventId === 'phone_click') {
+      return {
+        content_name: eventId === 'whatsapp_click' ? 'WhatsApp' : 'Phone',
+        content_category: 'contact'
+      };
+    }
+    if (eventId === 'contact_form_submitted' || eventId === 'product_inquiry') {
+      return {
+        content_name: eventId === 'product_inquiry' ? 'Product inquiry' : 'Contact form',
+        content_category: meta.productName || meta.product_name || undefined
+      };
+    }
+    return meta;
+  }
+
+  var PLATFORM = {
+    whatsapp_click: { ga4: 'contact', meta: 'Contact', gtm: 'whatsapp_click', ecom: false },
+    phone_click: { ga4: 'contact', meta: 'Contact', gtm: 'phone_click', ecom: false },
+    contact_form_submitted: { ga4: 'generate_lead', meta: 'Lead', gtm: 'contact_form_submitted', ecom: false },
+    checkout_started: { ga4: 'begin_checkout', meta: 'InitiateCheckout', gtm: 'begin_checkout', ecom: true },
+    checkout_complete: { ga4: 'purchase', meta: 'Purchase', gtm: 'purchase', ecom: true },
+    product_inquiry: { ga4: 'generate_lead', meta: 'Lead', gtm: 'product_inquiry', ecom: false },
+    add_to_cart: { ga4: 'add_to_cart', meta: 'AddToCart', gtm: 'add_to_cart', ecom: true },
+    view_product: { ga4: 'view_item', meta: 'ViewContent', gtm: 'view_item', ecom: true }
+  };
+
+  function purchaseDedupKey(orderId) {
+    return 'zappy_purchase_fired_' + String(orderId || '');
+  }
+
+  function alreadyFiredPurchase(orderId) {
+    if (!orderId) return false;
+    try {
+      return sessionStorage.getItem(purchaseDedupKey(orderId)) === '1';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function markPurchaseFired(orderId) {
+    if (!orderId) return;
+    try { sessionStorage.setItem(purchaseDedupKey(orderId), '1'); } catch (e) {}
+  }
+
+  /**
+   * Fire a marketing event to first-party analytics + GA4/GTM/Meta when present.
+   * @param {string} eventName marketing ID or ecommerce alias
+   * @param {object} [metadata]
+   * @param {{ skipFirstParty?: boolean }} [opts]
+   */
+  window.zappyFireMarketingEvent = function(eventName, metadata, opts) {
+    try {
+      opts = opts || {};
+      metadata = metadata || {};
+      var eventId = ECOM_ALIAS[eventName] || eventName;
+      var plat = PLATFORM[eventId];
+      if (!plat) return;
+
+      if (!metadata.pagePath && !metadata.page_path) {
+        metadata.pagePath = pagePath();
+      }
+
+      if (eventId === 'checkout_complete') {
+        var oid = String(metadata.orderId || metadata.order_id || metadata.transaction_id || '');
+        if (oid && alreadyFiredPurchase(oid)) return;
+        if (oid) markPurchaseFired(oid);
+      }
+
+      // First-party (skip when already tracked via zappyTrackEcomAnalytics path
+      // that opts out, or when caller already recorded under a different name)
+      if (!opts.skipFirstParty) {
+        try {
+          if (window.zappyAnalytics && typeof window.zappyAnalytics.track === 'function') {
+            window.zappyAnalytics.track(eventId, metadata);
+          }
+        } catch (e1) {}
+      }
+
+      // GTM / dataLayer — platform-standard ecommerce event names
+      try {
+        window.dataLayer = window.dataLayer || [];
+        if (plat.ecom) {
+          var ga4ForGtm = buildGa4Params(eventId, metadata);
+          var ecommerce = {};
+          if (ga4ForGtm.transaction_id) ecommerce.transaction_id = ga4ForGtm.transaction_id;
+          if (ga4ForGtm.value != null) ecommerce.value = ga4ForGtm.value;
+          if (ga4ForGtm.currency) ecommerce.currency = ga4ForGtm.currency;
+          if (ga4ForGtm.items) ecommerce.items = ga4ForGtm.items;
+          window.dataLayer.push({ event: plat.gtm, ecommerce: ecommerce });
+          // Secondary Zappy-specific trigger for merchants who want it
+          if (eventId === 'checkout_complete' || eventId === 'checkout_started') {
+            window.dataLayer.push({ event: eventId, ecommerce: ecommerce });
+          }
+        } else {
+          var dl = { event: plat.gtm };
+          for (var k in metadata) {
+            if (Object.prototype.hasOwnProperty.call(metadata, k)) dl[k] = metadata[k];
+          }
+          window.dataLayer.push(dl);
+        }
+      } catch (e2) {}
+
+      // GA4 gtag
+      try {
+        if (typeof window.gtag === 'function') {
+          window.gtag('event', plat.ga4, buildGa4Params(eventId, metadata));
+        }
+      } catch (e3) {}
+
+      // Meta Pixel (only when fbq is loaded — consent-gated lazy loader)
+      try {
+        if (typeof window.fbq === 'function') {
+          window.fbq('track', plat.meta, buildMetaParams(eventId, metadata));
+        }
+      } catch (e4) {}
+    } catch (err) {}
+  };
+
+  // ---- Click listeners (capture) ----
+  var recent = Object.create(null);
+  function dedupe(key) {
+    var now = Date.now();
+    if (recent[key] && now - recent[key] < 800) return true;
+    recent[key] = now;
+    return false;
+  }
+
+  function closest(el, selector) {
+    if (!el) return null;
+    if (el.closest) return el.closest(selector);
+    return null;
+  }
+
+  function findAnchor(el) {
+    var node = el;
+    while (node && node !== document) {
+      if (node.tagName === 'A') return node;
+      node = node.parentElement;
+    }
+    return null;
+  }
+
+  function isWhatsAppHref(href) {
+    if (!href) return false;
+    var h = String(href).toLowerCase();
+    return h.indexOf('wa.me/') !== -1 ||
+      h.indexOf('api.whatsapp.com') !== -1 ||
+      h.indexOf('whatsapp.com/send') !== -1 ||
+      h.indexOf('whatsapp:') === 0;
+  }
+
+  document.addEventListener('click', function(e) {
+    try {
+      var target = e.target;
+      if (!target) return;
+
+      // WhatsApp
+      var waFloat = closest(target, '.whatsapp-float, a.whatsapp-float, [data-zappy-whatsapp]');
+      var anchor = findAnchor(target);
+      var href = (anchor && anchor.href) || '';
+      if (waFloat || (anchor && isWhatsAppHref(href))) {
+        if (!dedupe('wa:' + href)) {
+          var waSource = waFloat ? 'float' : 'link';
+          window.zappyFireMarketingEvent('whatsapp_click', {
+            source: waSource,
+            href: href || null,
+            pagePath: pagePath()
+          });
+        }
+        return;
+      }
+
+      // Phone
+      var phoneBtn = closest(target, '.phone-header-btn, .nav-phone-btn, .call-btn, [data-zappy-phone]');
+      var telHref = '';
+      if (anchor && anchor.href && String(anchor.href).toLowerCase().indexOf('tel:') === 0) {
+        telHref = anchor.href;
+      } else if (phoneBtn && phoneBtn.href && String(phoneBtn.href).toLowerCase().indexOf('tel:') === 0) {
+        telHref = phoneBtn.href;
+      }
+      if (phoneBtn || telHref) {
+        var phone = '';
+        if (telHref) {
+          phone = String(telHref).replace(/^tel:/i, '').trim();
+        }
+        if (!dedupe('tel:' + (phone || (phoneBtn && phoneBtn.id) || 'btn'))) {
+          window.zappyFireMarketingEvent('phone_click', {
+            source: phoneBtn ? 'button' : 'link',
+            phone: phone || null,
+            href: telHref || null,
+            pagePath: pagePath()
+          });
+        }
+        return;
+      }
+
+      // Catalog / product inquiry
+      if (IS_CATALOG || IS_FULL) {
+        var inq = closest(target, '.card-inquiry-btn, #zappy-pdp-inquiry-btn, a.inquiry-btn');
+        if (inq) {
+          if (!dedupe('inq:' + (inq.id || inq.className))) {
+            var product = window.currentProduct || null;
+            var productId = (inq.getAttribute && inq.getAttribute('data-product-id')) ||
+              (product && product.id) || null;
+            var productName = (inq.getAttribute && inq.getAttribute('data-product-name')) ||
+              (product && product.name) || null;
+            var channel = 'contact_page';
+            var inqHref = (inq.tagName === 'A' && inq.href) ? inq.href : '';
+            if (inqHref && String(inqHref).toLowerCase().indexOf('mailto:') === 0) channel = 'mailto';
+            window.zappyFireMarketingEvent('product_inquiry', {
+              source: inq.id === 'zappy-pdp-inquiry-btn' ? 'pdp' : 'card',
+              productId: productId,
+              productName: productName,
+              channel: channel,
+              pagePath: pagePath()
+            });
+          }
+        }
+      }
+    } catch (err) {}
+  }, true);
+})();
+</script>
     <meta property="og:title" content="תכנון מטבח מנצח — IMRI">
     <meta property="og:description" content="המדריך הדיגיטלי שיחסוך לכם טעויות יקרות בתכנון המטבח. מניסיון של אלפי פרויקטים, אנו מעניקים לכם את הכלים לתכנן נכון מההתחלה. הורידו עכשיו ב-97 ₪ בלבד!">
     <meta name="twitter:card" content="summary_large_image">
@@ -563,10 +934,10 @@ html{box-sizing:border-box;-webkit-text-size-adjust:100%}*,*::before,*::after{bo
 <a class="skip-link" href="#main">דלג לתוכן הראשי</a>
   <nav class="navbar" dir="rtl">
   <button class="mobile-toggle" id="mobileToggle" aria-label="Menu">
-    <svg style="display:block !important" class="hamburger-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <svg class="hamburger-icon" width="24" height="24" viewBox="0 0 24 24" fill="none">
       <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
     </svg>
-    <svg class="close-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" style="display:none !important">
+    <svg class="close-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" style="display: none;">
       <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
     </svg>
   </button>
@@ -1052,12 +1423,12 @@ html{box-sizing:border-box;-webkit-text-size-adjust:100%}*,*::before,*::after{bo
         <div class="index-hero-section__scrim" aria-hidden="true"></div>
     </div>
 
-    <div class="index-hero-section__overlay" data-zappy-align-target="true">
+    <div class="index-hero-section__overlay" data-zappy-align-target="true" style="">
         <div class="index-hero-section__content">
             
-            <h3 class="index-hero-section__subtitle" style="text-align: center;"></h3><h1 style="color: rgb(255, 249, 240) !important; text-align: center;" data-element-id="move-1783882502106-yd7qllf2"><span style="color: #1f2426 !important"><span style="color: #fff9f0 !important"><span style="color: #f3e7d8 !important">המדריך המקצועי שיחסוך לכם החלטות יקרות, טעויות שקשה לתקן ועשרות שעות של חיפושים והתלבטויות.</span></span></span></h1><h2></h2><h1><span class="index-hero-section__eyebrow">המדריך המקצועי לתכנון מטבח</span></h1>
+            <h3 class="index-hero-section__subtitle" style="text-align: center;"></h3><h1 style="color: rgb(255, 249, 240) !important; text-align: center;" data-element-id="move-1783882502106-yd7qllf2"><span style="color: #1f2426 !important"><span style="color: #fff9f0 !important"><span style="color: #f3e7d8 !important">המדריך המקצועי שיחסוך לכם החלטות יקרות, טעויות שקשה לתקן ועשרות שעות של חיפושים והתלבטויות.</span></span></span></h1><h2 style=""></h2><h1 style=""><span class="index-hero-section__eyebrow">המדריך המקצועי לתכנון מטבח</span></h1>
             <p class="index-hero-section__description" style="text-align: center;">הגיעו מוכנים לפגישה עם הנגר, המעצבת או חברת המטבחים. ידע מקצועי שנצבר מניסיון אמיתי בעולם התכנון והעיצוב, עכשיו במדריך PDF אחד.</p>
-            <p class="zappy-editable"><a href="#" class="index-hero-section__btn index-hero-section__btn--primary btn btn-primary" data-element-type="button" data-element-id="zappy-drop-jzzuf9prj" data-native-element="true" style="outline: none; border-color: rgb(160, 82, 45) !important; color: var(--light-text, #ffffff) !important; background-color: rgb(160, 82, 45) !important; background-image: none !important;" data-text-color="light">לרכישה מהירה</a></p><div class="index-hero-section__cta-group">
+            <p class="zappy-editable"><a href="#" class="index-hero-section__btn index-hero-section__btn--primary btn btn-primary" data-element-type="button" data-element-id="zappy-drop-jzzuf9prj" data-native-element="true" style="outline: none; border-color: rgb(160, 82, 45) !important; color: var(--light-text, #ffffff) !important; background-color: rgb(160, 82, 45) !important; background-image: none !important;" data-text-color="light">לרכישה מהירה</a></p><div class="index-hero-section__cta-group" style="">
                 
                 
             </div>
@@ -1098,7 +1469,7 @@ html{box-sizing:border-box;-webkit-text-size-adjust:100%}*,*::before,*::after{bo
     <!-- Editorial Intro -->
     <header class="index-audience-section__intro">
       <h2 class="index-audience-section__headline">למי המדריך מתאים?</h2>
-      <p class="index-audience-section__subhead">המדריך הזה נבנה בדיוק בשבילכם — לאנשים שעומדים להשקיע במטבח ורוצים להגיע מוכנים,&nbsp;<br>לשאול את השאלות הנכונות ולהימנע מטעויות יקרות.</p>
+      <p class="index-audience-section__subhead" style="">המדריך הזה נבנה בדיוק בשבילכם — לאנשים שעומדים להשקיע במטבח ורוצים להגיע מוכנים,&nbsp;<br>לשאול את השאלות הנכונות ולהימנע מטעויות יקרות.</p>
       <div class="index-audience-section__ornament" aria-hidden="true">
         <svg data-no-icon-edit="true" viewBox="0 0 120 12" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <line x1="0" y1="6" x2="54" y2="6" stroke="currentColor" stroke-width="1.5"></line>
@@ -1169,7 +1540,7 @@ html{box-sizing:border-box;-webkit-text-size-adjust:100%}*,*::before,*::after{bo
             <rect x="26" y="12" width="4" height="4" rx="0.5" fill="currentColor" opacity="0.4"></rect>
           </svg>
         </div>
-        <h3 class="audience-card__title">קונים דירה חדשה</h3>
+        <h3 class="audience-card__title" style="">קונים דירה חדשה</h3>
         <p class="audience-card__desc">קיבלתם מפתח ויש לכם הזדמנות לעצב מטבח מאפס — המדריך יעזור לכם לקבל החלטות חכמות לפני הפגישה עם המטבחים.</p>
       </article>
 
@@ -1314,19 +1685,19 @@ html{box-sizing:border-box;-webkit-text-size-adjust:100%}*,*::before,*::after{bo
   </div>
 </section>
 
-<section data-band-index="3" id="features" class="index-features-section" data-layout-spec="בית-features" dir="rtl">
+<section data-band-index="3" id="features" class="index-features-section" data-layout-spec="בית-features" dir="rtl" style="">
   <div class="index-features-section-bg"></div>
   <div class="index-features-section-container">
     <div class="index-features-section-top">
       <div class="index-features-section-header">
-        <h2 class="index-features-section-title">כל מה שצריך לדעת לפני שמתכננים מטבח</h2>
+        <h2 class="index-features-section-title" style="">כל מה שצריך לדעת לפני שמתכננים מטבח</h2>
         <p class="index-features-section-subtitle" style="outline: none; text-align: center;">הידע המקצועי שיחסוך לכם טעויות יקרות, החלטות מיותרות ועשרות שעות של חיפושים —&nbsp;</p><div>כל מה שחשוב לבדוק לפני הפגישה הראשונה עם נגר או חברת מטבחים.</div>
       </div>
       <div class="index-features-section-pdf-preview">
         <div class="pdf-mockup">
           <div class="pdf-page">
             <div class="pdf-cover">
-              <div class="pdf-cover-title">מדריך תכנון מטבח</div>
+              <div class="pdf-cover-title" style="">מדריך תכנון מטבח</div>
               <div class="pdf-cover-lines">
                 <span class="pdf-line pdf-line-1"></span>
                 <span class="pdf-line pdf-line-2"></span>
@@ -1426,7 +1797,7 @@ html{box-sizing:border-box;-webkit-text-size-adjust:100%}*,*::before,*::after{bo
               </svg>
             </div>
             <h3 class="bonus-card-title">צ׳קליסט מקצועי לפני שמתחילים</h3>
-            <p class="bonus-card-desc">רשימת תיוג מסודרת שתבטיח שלא תפספסו אף פרט חשוב לפני הפגישה עם הנגר או חברת המטבחים.</p>
+            <p class="bonus-card-desc" style="">רשימת תיוג מסודרת שתבטיח שלא תפספסו אף פרט חשוב לפני הפגישה עם הנגר או חברת המטבחים.</p>
           </article>
 
           <article class="bonus-card card-dark" data-grid-item-index="1">
@@ -1436,17 +1807,17 @@ html{box-sizing:border-box;-webkit-text-size-adjust:100%}*,*::before,*::after{bo
               </svg>
             </div>
             <h3 class="bonus-card-title">בונוסים נוספים שמחכים בפנים</h3>
-            <p class="bonus-card-desc">הפתעות מקצועיות שצירפנו למדריך —<br>רק לרוכשי המדריך!</p>
+            <p class="bonus-card-desc" style="">הפתעות מקצועיות שצירפנו למדריך —<br>רק לרוכשי המדריך!</p>
           </article>
 
-          <article class="bonus-card card-dark" data-grid-item-index="2">
+          <article class="bonus-card card-dark" data-grid-item-index="2" style="">
             <div class="bonus-icon-wrapper">
               <svg data-element-type="icon" data-icon-type="svg" class="bonus-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
               </svg>
             </div>
             <h3 class="bonus-card-title">ליווי לאורך כל הדרך</h3>
-            <p class="bonus-card-desc">המדריך נשאר אתכם — תוכלו לחזור אליו בכל שלב, להתרענן לפני החלטות משמעותיות ולתכנן בביטחון.</p>
+            <p class="bonus-card-desc" style="">המדריך נשאר אתכם — תוכלו לחזור אליו בכל שלב, להתרענן לפני החלטות משמעותיות ולתכנן בביטחון.</p>
           </article>
         </div>
 
@@ -1487,7 +1858,7 @@ html{box-sizing:border-box;-webkit-text-size-adjust:100%}*,*::before,*::after{bo
             <div class="collage-main-wrapper">
                 <img loading="lazy" decoding="async" data-placeholder="index-credibility-image-1" data-context="A warm, editorial photograph of an interior design workspace: a large oak table with scattered architectural blueprints, a ceramic coffee cup, a brass architect scale ruler, and a textured linen fabric swatch. Soft natural window light from the left, shallow depth of field, warm plaster wall background with a subtle stone-gray undertone. Elegant, natural, not staged." width="600" height="400" src="/assets/site-index-credibility-image-1.webp" alt="סביבת עבודה של מעצב פנים עם שרטוטים וכלי תכנון" class="collage-main-img" data-element-type="image" data-element-id="img-1783881040375-thhzzb2wt" style="object-position: 50% 50%;" fetchpriority="low">
                 <div class="collage-secondary-wrapper">
-                    <img loading="lazy" decoding="async" data-placeholder="index-credibility-image-2" data-context="A close-up macro shot of premium kitchen cabinet hardware: a brushed brass handle mounted on a rich walnut wood panel, with a subtle vein of Carrara marble visible in the out-of-focus background. The image has a shallow depth of field, emphasizing material texture and craftsmanship. Warm, tactile, and refined." width="260" height="180" src="/assets/site-index-credibility-image-2.webp" alt="פרט של ידית מטבח מוברשת על עץ אגוז עם רקע שיש" class="collage-secondary-img" data-element-type="image" data-element-id="img-1783881040378-1h3gq9s09" fetchpriority="low">
+                    <img loading="lazy" decoding="async" data-placeholder="index-credibility-image-2" data-context="A close-up macro shot of premium kitchen cabinet hardware: a brushed brass handle mounted on a rich walnut wood panel, with a subtle vein of Carrara marble visible in the out-of-focus background. The image has a shallow depth of field, emphasizing material texture and craftsmanship. Warm, tactile, and refined." width="260" height="180" src="/assets/site-index-credibility-image-2.webp" alt="פרט של ידית מטבח מוברשת על עץ אגוז עם רקע שיש" class="collage-secondary-img" data-element-type="image" data-element-id="img-1783881040378-1h3gq9s09" style="" fetchpriority="low">
                 </div>
             </div>
             <!-- Decorative blueprint motif -->
@@ -1647,7 +2018,7 @@ html{box-sizing:border-box;-webkit-text-size-adjust:100%}*,*::before,*::after{bo
             <span class="faq-icon">
               <svg data-element-type="icon" data-icon-type="svg" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-element-id="zappy-temp-icon-1784047729791-4336r7n57" style="width: 25px !important; height: 25px !important; color: rgb(180, 95, 58);" data-size-adjusted="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
             </span>
-            <h3 class="faq-question-text">באיזה פורמט מגיע המדריך?</h3>
+            <h3 class="faq-question-text" style="">באיזה פורמט מגיע המדריך?</h3>
           </div>
           <p class="faq-answer" style="max-height: 0px; overflow: hidden; opacity: 0; padding-top: 0px; padding-bottom: 0px; transition: max-height 0.35s, opacity 0.25s, padding 0.25s;">המדריך נשלח כקובץ PDF דיגיטלי, מותאם לקריאה נוחה בכל מכשיר — מחשב, טאבלט או טלפון. תוכלו לשמור אותו, להדפיס אם תרצו, ולחזור אליו מתי שנוח לכם, גם בלי חיבור לרשת.</p>
         </div>
@@ -1657,7 +2028,7 @@ html{box-sizing:border-box;-webkit-text-size-adjust:100%}*,*::before,*::after{bo
             <span class="faq-icon" style="transform: rotate(180deg); transition: transform 0.3s;">
               <svg data-element-type="icon" data-icon-type="svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
             </span>
-            <h3 class="faq-question-text">מתי אקבל את המדריך לאחר הרכישה?</h3>
+            <h3 class="faq-question-text" style="">מתי אקבל את המדריך לאחר הרכישה?</h3>
           </div>
           <p class="faq-answer" style="max-height: 54px; overflow: hidden; opacity: 1; transition: max-height 0.35s, opacity 0.25s, padding 0.25s;">מיד לאחר השלמת הרכישה תקבלו גישה מיידית לקובץ — ישירות לעמוד ההורדה.&nbsp;<br>אין המתנה, אין משלוחים. ברגע שהתשלום מאושר, המדריך אצלכם.</p>
         </div>
@@ -1667,7 +2038,7 @@ html{box-sizing:border-box;-webkit-text-size-adjust:100%}*,*::before,*::after{bo
             <span class="faq-icon" style="transform: rotate(180deg); transition: transform 0.3s;">
               <svg data-element-type="icon" data-icon-type="svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
             </span>
-            <h3 class="faq-question-text">אני עוד לא התחלתי לתכנן. המדריך עדיין רלוונטי?</h3>
+            <h3 class="faq-question-text" style="">אני עוד לא התחלתי לתכנן. המדריך עדיין רלוונטי?</h3>
           </div>
           <p class="faq-answer" style="max-height: 0px; overflow: hidden; opacity: 0; transition: max-height 0.35s, opacity 0.25s, padding 0.25s; padding-top: 0px; padding-bottom: 0px;">ברור!<span style="font-size: 1rem; background-color: initial;">&nbsp;זה הזמן הכי טוב לקרוא אותו. המדריך נכתב במיוחד כדי לעזור לכם עוד </span><strong style="font-size: 1rem; background-color: initial;">לפני</strong><span style="font-size: 1rem; background-color: initial;"> שאתם מקבלים החלטות — להבין מה חשוב לבדוק, אילו שאלות לשאול, ואיך להימנע מהטעויות הנפוצות שעולות ביוקר בהמשך. ככל שתקראו מוקדם יותר, כך תחסכו יותר.</span></p>
         </div>
@@ -1678,8 +2049,8 @@ html{box-sizing:border-box;-webkit-text-size-adjust:100%}*,*::before,*::after{bo
     <div class="cta-card zappy-grid-item-no-stretch" data-grid-item-index="1">
       <div class="cta-card-content" style="text-align: center;">
         <h2 class="cta-heading" style="text-align: center;">המטבח הוא הלב של הבית</h2>
-        <ol><li>המטבח הוא הרבה יותר מחלל עבודה- זה המקום בו מתחילים את הבוקר ומתאספים בסוף היום. המקום בו נוצרים הזיכרונות הכי פשוטים והכי יקרים. תכנון נכון מההחלטה הראשונה הוא לא מותרות — הוא הדרך היחידה להבטיח שהמטבח שלכם יהיה בדיוק כמו שדמיינתם. אל תשאירו את זה למזל.</li><li>-</li><li>במדריך הזה ריכזתי עבורכם את כל מה שכדאי לדעת לפני שמתחילים - כדי שתתכננו מטבח יפה, פרקטי ובעיקר כזה שתרגישו נכון איתו גם בעוד שנים.</li></ol>
-        <p><a href="#purchase" class="cta-button">להורדת המדריך עכשיו</a>
+        <ol style=""><li>המטבח הוא הרבה יותר מחלל עבודה- זה המקום בו מתחילים את הבוקר ומתאספים בסוף היום. המקום בו נוצרים הזיכרונות הכי פשוטים והכי יקרים. תכנון נכון מההחלטה הראשונה הוא לא מותרות — הוא הדרך היחידה להבטיח שהמטבח שלכם יהיה בדיוק כמו שדמיינתם. אל תשאירו את זה למזל.</li><li>-</li><li>במדריך הזה ריכזתי עבורכם את כל מה שכדאי לדעת לפני שמתחילים - כדי שתתכננו מטבח יפה, פרקטי ובעיקר כזה שתרגישו נכון איתו גם בעוד שנים.</li></ol>
+        <p><a href="#purchasehttps://pay.grow.link/cdf960ace736493a45e67ed0b26cf792-MzIxOTExMg" class="cta-button" data-native-element="true" data-element-id="btn-1784049488442-boe0zlsxp" data-element-type="button" style="outline: none; border-color: rgb(161, 83, 45) !important; color: rgb(255, 255, 255) !important; background-color: rgb(161, 83, 45) !important; background-image: none !important;">להורדת המדריך עכשיו</a>
       </p></div>
       <!-- Decorative plaster texture accent -->
       <div class="cta-decoration" aria-hidden="true"></div>
@@ -1703,7 +2074,7 @@ html{box-sizing:border-box;-webkit-text-size-adjust:100%}*,*::before,*::after{bo
       <!-- Column 3: Contact Info -->
       <div class="footer-col footer-contact-col">
         
-        <ul class="footer-contact"><li>
+        <ul class="footer-contact" style=""><li>
             <span class="contact-icon"><i class="fas fa-envelope" data-element-type="icon" data-element-id="icon-1783881040368-x5t9st60y" data-icon-type="fontawesome" style="cursor: pointer;"></i></span>
             <span class="contact-text"><a href="/cdn-cgi/l/email-protection#efb48d9a9c86818a9c9cb08a828e8683b2">Imriarch@gmail.com</a></span>
           </li><li>
@@ -1716,7 +2087,7 @@ html{box-sizing:border-box;-webkit-text-size-adjust:100%}*,*::before,*::after{bo
       <!-- Column 4: Business Hours -->
       <div class="footer-col footer-hours-col">
         
-        <ul class="footer-hours"><li><a href="/"><br></a></li><li></li></ul>
+        <ul class="footer-hours" style=""><li><a href="/" style=""><br></a></li><li></li></ul>
       </div>
 
       <!-- Column 5: Social Media -->
